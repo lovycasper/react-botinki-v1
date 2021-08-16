@@ -9,6 +9,7 @@ function App() {
   const [cartOpened, setCartOpened] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [searchValue, setSearchValue] = useState('');
+  const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
     // * Native example
@@ -35,6 +36,13 @@ function App() {
     // setCartItems((prev) => [...prev, obj]);    !better!
     axios.post('https://611a81eb5710ca00173a1a69.mockapi.io/cart', obj);
     setCartItems((prev) => [...prev, obj]);
+  };
+
+  const onAddToFavorite = (obj) => {
+    // setCartItems([...cartItems, obj]);         !bad!
+    // setCartItems((prev) => [...prev, obj]);    !better!
+    axios.post('https://611a81eb5710ca00173a1a69.mockapi.io/favorites', obj);
+    setFavorites((prev) => [...prev, obj]);
   };
 
   const onRemoveCartItem = (id) => {
@@ -83,7 +91,7 @@ function App() {
                   price={obj.price}
                   id={obj.id}
                   imageUrl={obj.imageUrl}
-                  onFavorite={() => console.log('Нажали плюс')}
+                  onFavorite={(item) => onAddToFavorite(item)}
                   onPlus={(item) => onAddToCart(item)}
                 />
               </React.Fragment>
