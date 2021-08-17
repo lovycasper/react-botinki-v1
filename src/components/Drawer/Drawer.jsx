@@ -18,24 +18,24 @@ function Drawer({ onClose, items = [], onRemoveItem }) {
           <>
             <div className="items">
               {items.map((item) => (
-                <div className="cartItem d-flex align-center mb-20">
-                  <div
-                    style={{ backgroundImage: `url(${item.imageUrl})` }}
-                    className="cartItemImg"
-                  />
-                  <div className="mr-20 flex">
-                    <p className="mb-5">{item.title}</p>
-                    <b>{item.price}</b>
+                <React.Fragment key={item.id}>
+                  <div className="cartItem d-flex align-center mb-20">
+                    <div
+                      style={{ backgroundImage: `url(${item.imageUrl})` }}
+                      className="cartItemImg"
+                    />
+                    <div className="mr-20 flex">
+                      <p className="mb-5">{item.title}</p>
+                      <b>{item.price}</b>
+                    </div>
+                    <img
+                      onClick={() => onRemoveItem(item.id)}
+                      className="removeBtn"
+                      src="/img/btn-remove.svg"
+                      alt="Remove"
+                    />
                   </div>
-                  {console.log('Drawer item: ', item)}
-                  {console.log('Drawer item: ', item.id)}
-                  <img
-                    onClick={() => onRemoveItem(item.id)}
-                    className="removeBtn"
-                    src="/img/btn-remove.svg"
-                    alt="Remove"
-                  />
-                </div>
+                </React.Fragment>
               ))}
             </div>
             <div className="cartTotalBlock">

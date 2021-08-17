@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Route } from 'react-router-dom';
 import axios from 'axios';
-import Card from './components/Card/Card';
 import Header from './components/Header/Header';
 import Drawer from './components/Drawer/Drawer';
+
+import Home from './pages/Home';
+import Favorites from './pages/Favorites';
 
 function App() {
   const [items, setItems] = useState([]);
@@ -12,42 +15,54 @@ function App() {
   const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
-    // * Native example
-    // fetch('https://611a81eb5710ca00173a1a69.mockapi.io/items')
-    //   .then((res) => {
-    //     return res.json();
-    //   })
-    //   .then((json) => {
-    //     setItems(json);
-    //   });
+    async function fetchData() {
+      // ! This way showed by Archakov, this is a bad idea to fetch data from server..
+      // ! REWRITE THIS!!!
+      const itemsResponse = await axios.get('https://611a81eb5710ca00173a1a69.mockapi.io/items');
+      const cartResponse = await axios.get('https://611a81eb5710ca00173a1a69.mockapi.io/cart');
+      const favoriteResponse = await axios.get(
+        'https://611a81eb5710ca00173a1a69.mockapi.io/favorites',
+      );
 
-    // * Axios example
-    axios.get('https://611a81eb5710ca00173a1a69.mockapi.io/items').then((res) => {
-      setItems(res.data);
-    });
-
-    axios.get('https://611a81eb5710ca00173a1a69.mockapi.io/cart').then((res) => {
-      setCartItems(res.data);
-    });
+      setCartItems(cartResponse.data);
+      setFavorites(favoriteResponse.data);
+      setItems(itemsResponse.data);
+    }
+    fetchData();
   }, []);
 
   const onAddToCart = (obj) => {
-    // setCartItems([...cartItems, obj]);         !bad!
-    // setCartItems((prev) => [...prev, obj]);    !better!
-    axios.post('https://611a81eb5710ca00173a1a69.mockapi.io/cart', obj);
-    setCartItems((prev) => [...prev, obj]);
+    // ! bad setCartItems([...cartItems, obj]);
+    // * better setCartItems((prev) => [...prev, obj]);
+    if (cartItems.find((item) => Number(item.id) === Number(obj.id))) {
+      axios.delete(`https://611a81eb5710ca00173a1a69.mockapi.io/cart/${obj.id}`);
+      setCartItems((prev) => prev.filter((item) => Number(item.id) !== Number(obj.id)));
+    } else {
+      axios.post('https://611a81eb5710ca00173a1a69.mockapi.io/cart', obj);
+      setCartItems((prev) => [...prev, obj]);
+    }
   };
 
-  const onAddToFavorite = (obj) => {
-    // setCartItems([...cartItems, obj]);         !bad!
-    // setCartItems((prev) => [...prev, obj]);    !better!
-    axios.post('https://611a81eb5710ca00173a1a69.mockapi.io/favorites', obj);
-    setFavorites((prev) => [...prev, obj]);
+  const onAddToFavorite = async (obj) => {
+    try {
+      if (favorites.find((favObj) => Number(favObj.id) === Number(obj.id))) {
+        axios.delete(`https://611a81eb5710ca00173a1a69.mockapi.io/favorites/${obj.id}`);
+        setFavorites((prev) => prev.filter((item) => Number(item.id) !== Number(obj.id)));
+      } else {
+        const { data } = await axios.post(
+          'https://611a81eb5710ca00173a1a69.mockapi.io/favorites',
+          obj,
+        );
+        setFavorites((prev) => [...prev, data]);
+      }
+    } catch (error) {
+      alert('Не удалось добавить в закладки');
+    }
   };
 
   const onRemoveCartItem = (id) => {
     axios.delete(`https://611a81eb5710ca00173a1a69.mockapi.io/cart/${id}`);
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+    setCartItems((prev) => prev.filter((item) => Number(item.id) !== Number(id)));
   };
 
   const onChangeSearchInput = (event) => {
@@ -63,41 +78,24 @@ function App() {
           onRemoveItem={onRemoveCartItem}
         />
       )}
-      <Header onClickCart={() => setCartOpened(true)} />
-      <div className="content p-40">
-        <div className="d-flex align-center justify-between mb-40">
-          <h1>{searchValue ? `Поиск: ${searchValue}` : 'Все botinki'}</h1>
-          <div className="search-block d-flex">
-            <img src="/img/search.svg" alt="Search" />
-            {searchValue && (
-              <img
-                onClick={() => setSearchValue('')}
-                className="clear cu-p"
-                src="/img/btn-remove.svg"
-                alt="Clear"
-              />
-            )}
-            <input onChange={onChangeSearchInput} value={searchValue} placeholder="Поиск..." />
-          </div>
-        </div>
 
-        <div className="d-flex flex-wrap">
-          {items
-            .filter((item) => item.title.toLowerCase().includes(searchValue.toLowerCase())) // example of filtering (case sensitive) while mapping component
-            .map((obj) => (
-              <React.Fragment key={obj.id}>
-                <Card
-                  title={obj.title}
-                  price={obj.price}
-                  id={obj.id}
-                  imageUrl={obj.imageUrl}
-                  onFavorite={(item) => onAddToFavorite(item)}
-                  onPlus={(item) => onAddToCart(item)}
-                />
-              </React.Fragment>
-            ))}
-        </div>
-      </div>
+      <Header onClickCart={() => setCartOpened(true)} />
+
+      <Route path="/" exact>
+        <Home
+          items={items}
+          cartItems={cartItems}
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
+          onChangeSearchInput={onChangeSearchInput}
+          onAddToFavorite={onAddToFavorite}
+          onAddToCart={onAddToCart}
+        />
+      </Route>
+
+      <Route path="/favorites" exact>
+        <Favorites items={favorites} onAddToFavorite={onAddToFavorite} />
+      </Route>
     </div>
   );
 }
